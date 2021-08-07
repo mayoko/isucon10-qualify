@@ -1066,14 +1066,23 @@ async fn search_estate_nazotte(
             return Ok(Vec::new());
         }
 
-        let mut estates_in_polygon = Vec::new();
-        for estate in estates_in_bounding_box {
-            let query = format!("select * from estate where id = ? and ST_Contains(ST_PolygonFromText({}), ST_GeomFromText('POINT({} {})'))", coordinates.coordinates_to_text(), estate.latitude, estate.longitude);
-            let validated_estate: Option<Estate> = conn.exec_first(query, (estate.id,))?;
-            if let Some(validated_estate) = validated_estate {
-                estates_in_polygon.push(validated_estate);
-            }
-        }
+        // let mut estates_in_polygon = Vec::new();
+        let estate_id_list_string = estates_in_bounding_box.iter().map(|estate| estate.id.to_string()).collect::<Vec<String>>().join(",");
+        let query = format!(
+            "select * from estate where id in ({}) and ST_Contains(ST_PolygonFromText({}), ST_GeomFromText( CONCAT('POINT(', latitude, ' ', longitude, ')') ) )",
+            estate_id_list_string,
+            coordinates.coordinates_to_text()
+        );
+        log::error!("{}", &query);
+        let estates_in_polygon: Vec<Estate> = conn.exec(query, ())?;
+        log::error!("count: {}, {:?}", estates_in_polygon.len(), estates_in_polygon.iter().map(|estate| estate.id).collect::<Vec<i64>>());
+        // for estate in estates_in_bounding_box {
+        //     let query = format!("select * from estate where id = ? and ST_Contains(ST_PolygonFromText({}), ST_GeomFromText('POINT({} {})'))", coordinates.coordinates_to_text(), estate.latitude, estate.longitude);
+        //     let validated_estate: Option<Estate> = conn.exec_first(query, (estate.id,))?;
+        //     if let Some(validated_estate) = validated_estate {
+        //         estates_in_polygon.push(validated_estate);
+        //     }
+        // }
         Ok(estates_in_polygon)
     })
     .await
