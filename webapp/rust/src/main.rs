@@ -1066,16 +1066,32 @@ async fn search_estate_nazotte(
             return Ok(Vec::new());
         }
 
-        // let mut estates_in_polygon = Vec::new();
+        // impl 1
         let estate_id_list_string = estates_in_bounding_box.iter().map(|estate| estate.id.to_string()).collect::<Vec<String>>().join(",");
         let query = format!(
-            "select * from estate where id in ({}) and ST_Contains(ST_PolygonFromText({}), ST_GeomFromText( CONCAT('POINT(', latitude, ' ', longitude, ')') ) )",
+            "select * from estate where id in ({}) and ST_Contains(ST_PolygonFromText({}), ST_GeomFromText( CONCAT('POINT(', latitude, ' ', longitude, ')') ) ) order by popularity desc, id asc",
             estate_id_list_string,
             coordinates.coordinates_to_text()
         );
-        log::error!("{}", &query);
         let estates_in_polygon: Vec<Estate> = conn.exec(query, ())?;
-        log::error!("count: {}, {:?}", estates_in_polygon.len(), estates_in_polygon.iter().map(|estate| estate.id).collect::<Vec<i64>>());
+
+        // impl 2
+        // let mut estates_in_polygon = Vec::new();
+        // for estates in estates_in_bounding_box.chunks(2) {
+        //     let estate_id_list_string = estates.iter().map(|estate| estate.id.to_string()).collect::<Vec<String>>().join(",");
+        //     let query = format!(
+        //         "select * from estate where id in ({}) and ST_Contains(ST_PolygonFromText({}), ST_GeomFromText( CONCAT('POINT(', latitude, ' ', longitude, ')') ) ) order by popularity desc, id asc",
+        //         estate_id_list_string,
+        //         coordinates.coordinates_to_text()
+        //     );
+        //     let validated_estates: Vec<Estate> = conn.exec(query, ())?;
+        //     for validated_estate in validated_estates {
+        //         estates_in_polygon.push(validated_estate);
+        //     }
+        // }
+
+        // original impl
+        // let mut estates_in_polygon = Vec::new();
         // for estate in estates_in_bounding_box {
         //     let query = format!("select * from estate where id = ? and ST_Contains(ST_PolygonFromText({}), ST_GeomFromText('POINT({} {})'))", coordinates.coordinates_to_text(), estate.latitude, estate.longitude);
         //     let validated_estate: Option<Estate> = conn.exec_first(query, (estate.id,))?;
