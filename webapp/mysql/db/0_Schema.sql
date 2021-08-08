@@ -19,6 +19,8 @@ CREATE TABLE isuumo.estate
     features    VARCHAR(64)         NOT NULL,
     popularity  INTEGER             NOT NULL
 );
+CREATE INDEX latitude_index ON isuumo.estate(latitude);
+CREATE INDEX longitude_index ON isuumo.estate(longitude);
 
 CREATE TABLE isuumo.chair
 (
